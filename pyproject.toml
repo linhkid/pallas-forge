@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pallas-forge"
+version = "0.1.0"
+description = "A lightweight auto-tuning framework for Pallas kernels on Google TPU"
+authors = [
+    {name = "Nguyen Khanh Linh"}
+]
+license = {text = "MIT"}
+requires-python = ">=3.10"
+dependencies = [
+    "jax>=0.4.30",
+    "jaxlib>=0.4.30",
+    "numpy",
+    "pyyaml",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+readme = "README.md"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.4.0",
+]
+viz = [
+    "matplotlib>=3.7",
+    "seaborn>=0.12",
+]
+profile = [
+    "tensorboard-plugin-profile",
+]
+tpu = [
+    "jax[tpu]>=0.4.30",
+]
+all = [
+    "pallas-forge[dev,viz,profile]",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pallas_forge*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "tpu_only: requires TPU hardware to run",
+]
