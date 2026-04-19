@@ -2,7 +2,14 @@
 
 A lightweight auto-tuning framework for [Pallas](https://jax.readthedocs.io/en/latest/pallas/index.html) kernels on Google TPU.
 
-**pallas-forge** helps you systematically discover *why* some kernel configurations outperform others by 3-5x, producing performance heatmaps, XProf profiler traces, and roofline charts.
+**pallas-forge** helps you systematically discover *why* some kernel configurations outperform others by 3-5×, producing performance heatmaps, XProf profiler traces, and roofline charts.
+
+<p align="center">
+  <img src="images/heatmap_matmul.png" alt="MatMul block-size heatmap on TPU v5e" width="520">
+  &nbsp;
+  <img src="images/roofline.png" alt="Roofline chart — pallas-forge reference kernels" width="520">
+</p>
+<p align="center"><em>Left: same matmul, different block sizes → 4× latency swing. Right: three reference kernels on the v5e roofline.</em></p>
 
 ## Features
 
@@ -15,6 +22,14 @@ A lightweight auto-tuning framework for [Pallas](https://jax.readthedocs.io/en/l
 - **XProf integration** — capture and compare profiler traces for top configurations
 - **Roofline analysis** — classify kernels as compute-bound or memory-bound
 - **CPU testing** — all kernels run on CPU via Pallas interpret mode (no TPU required for development)
+
+## Architecture
+
+<p align="center">
+  <img src="images/architecture.png" alt="pallas-forge software stack" width="720">
+</p>
+
+Your script calls pallas-forge; the kernels use `jax.experimental.pallas`, which lowers to Mosaic on TPU (or Triton on GPU). The tuner wraps everything in warm-up + statistical timing + optional XProf trace capture.
 
 ## Installation
 
@@ -132,6 +147,14 @@ report = tune(
 )
 # Open traces in TensorBoard:  tensorboard --logdir ./xprof_traces
 ```
+
+### Speedup vs XLA baseline
+
+<p align="center">
+  <img src="images/speedup_vs_xla.png" alt="Pallas-forge vs XLA baseline" width="820">
+</p>
+
+*Illustrative numbers. Reproduce on your own TPU by running `python benchmarks/run_all.py`.*
 
 ## Project Structure
 
