@@ -177,15 +177,21 @@ you can run them on a free TPU runtime.
 | `03_swiglu_geglu.ipynb` | Compute-bound fusion, SwiGLU vs GeGLU |
 | `04_auto_tuning.ipynb` | `tune()`, heatmaps, random search, YAML configs |
 
-## Blog series
+[//]: # ()
+[//]: # (## Blog series)
 
-Long-form articles accompanying the code, in `blog/`:
+[//]: # ()
+[//]: # (Long-form articles accompanying the code, in `blog/`:)
 
-1. [Why Pallas? Google's TPU needs its own kernel language](blog/01_why_pallas.md) — the landscape
-2. [Your first Pallas kernel: Tiled MatMul on TPU](blog/02_first_kernel.md) — hands-on walkthrough
-3. [The 3-5× problem: Auto-tuning Pallas kernels with pallas-forge](blog/03_autotuning_with_pallas_forge.md) — this library
+[//]: # ()
+[//]: # (1. [Why Pallas? Google's TPU needs its own kernel language]&#40;blog/01_why_pallas.md&#41; — the landscape)
 
-See [`blog/README.md`](blog/README.md) for the publication guide.
+[//]: # (2. [Your first Pallas kernel: Tiled MatMul on TPU]&#40;blog/02_first_kernel.md&#41; — hands-on walkthrough)
+
+[//]: # (3. [The 3-5× problem: Auto-tuning Pallas kernels with pallas-forge]&#40;blog/03_autotuning_with_pallas_forge.md&#41; — this library)
+
+[//]: # ()
+[//]: # (See [`blog/README.md`]&#40;blog/README.md&#41; for the publication guide.)
 
 ## Supported TPU generations
 
