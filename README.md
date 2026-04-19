@@ -19,15 +19,22 @@ A lightweight auto-tuning framework for [Pallas](https://jax.readthedocs.io/en/l
 ## Installation
 
 ```bash
-# Basic install
+# Basic install (CPU testing via interpret mode)
 pip install -e .
 
-# With development tools
+# With development tools + visualization
 pip install -e ".[dev,viz]"
 
-# On TPU VM
+# On a Linux TPU VM (libtpu is Linux-only)
 pip install -e ".[all,tpu]"
 ```
+
+> **Tip:** Create a dedicated conda env first to avoid polluting your base environment:
+> ```bash
+> conda create -n pallas-forge python=3.11 -y
+> conda activate pallas-forge
+> pip install -e ".[dev,viz]"
+> ```
 
 ## Quick Start
 
@@ -86,6 +93,33 @@ normed, new_residual = fused_rmsnorm_residual(x, residual, weight)
 output = fused_swiglu(x, w_gate, w_up, block_m=128, block_n=256)
 ```
 
+### Roofline analysis
+
+```python
+from pallas_forge.profile import roofline_chart, TPU_SPECS
+
+tpu = TPU_SPECS["v4"]  # or "v5e", "v5p"
+roofline_chart(
+    report.results,
+    peak_tflops=tpu["peak_tflops_bf16"],
+    peak_bandwidth_gb_s=tpu["peak_bandwidth_gb_s"],
+    save_path="roofline.png",
+)
+```
+
+Requires `flops_fn` and `bytes_fn` to be passed to `tune()` so TFLOPS and bandwidth get populated.
+
+### XProf trace capture for top configurations
+
+```python
+report = tune(
+    kernel_fn, input_fn, config,
+    top_n_traces=3,
+    trace_output_dir="./xprof_traces",
+)
+# Open traces in TensorBoard:  tensorboard --logdir ./xprof_traces
+```
+
 ## Project Structure
 
 ```
@@ -112,12 +146,12 @@ tests/                 # Correctness tests (run on CPU)
 ## Running Tests
 
 ```bash
-# All tests (runs on CPU via interpret mode)
+# All tests (run on CPU via Pallas interpret mode — no TPU required)
 pytest tests/ -v
-
-# Skip slow tests
-pytest tests/ -v -k "not slow"
 ```
+
+All 54 tests should pass on CPU. Tests marked `@requires_tpu` are skipped
+automatically when no TPU is detected.
 
 ## Running Benchmarks (requires TPU)
 
@@ -128,6 +162,40 @@ python benchmarks/bench_matmul.py
 # All benchmarks
 python benchmarks/run_all.py
 ```
+
+Outputs (CSV/JSON results + PNG heatmaps) land in `results/`.
+
+## Notebooks
+
+Interactive walkthroughs in `notebooks/` — each includes a Colab setup cell so
+you can run them on a free TPU runtime.
+
+| Notebook | Focus |
+|---|---|
+| `01_tiled_matmul.ipynb` | BlockSpec, grid, block sizes, bfloat16 |
+| `02_fused_rmsnorm.ipynb` | Kernel fusion, VPU vs MXU, HBM traffic |
+| `03_swiglu_geglu.ipynb` | Compute-bound fusion, SwiGLU vs GeGLU |
+| `04_auto_tuning.ipynb` | `tune()`, heatmaps, random search, YAML configs |
+
+## Blog series
+
+Long-form articles accompanying the code, in `blog/`:
+
+1. [Why Pallas? Google's TPU needs its own kernel language](blog/01_why_pallas.md) — the landscape
+2. [Your first Pallas kernel: Tiled MatMul on TPU](blog/02_first_kernel.md) — hands-on walkthrough
+3. [The 3-5× problem: Auto-tuning Pallas kernels with pallas-forge](blog/03_autotuning_with_pallas_forge.md) — this library
+
+See [`blog/README.md`](blog/README.md) for the publication guide.
+
+## Supported TPU generations
+
+`pallas_forge.profile.TPU_SPECS` provides hardware presets for roofline analysis:
+
+| Generation | Peak bf16 TFLOPS | Peak HBM GB/s | VMEM (MB) |
+|---|---|---|---|
+| v4 | 275 | 1200 | 32 |
+| v5e | 197 | 819 | 32 |
+| v5p | 459 | 2765 | 95 |
 
 ## License
 
