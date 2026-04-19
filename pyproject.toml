@@ -5,12 +5,28 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pallas-forge"
 version = "0.1.0"
-description = "A lightweight auto-tuning framework for Pallas kernels on Google TPU"
+description = "Lightweight auto-tuning framework for Pallas kernels on Google TPU"
 authors = [
-    {name = "Nguyen Khanh Linh"}
+    {name = "Nguyen Khanh Linh", email = "nklinh91@gmail.com"},
+]
+maintainers = [
+    {name = "Nguyen Khanh Linh", email = "nklinh91@gmail.com"},
 ]
 license = {text = "MIT"}
 requires-python = ">=3.10"
+readme = "README.md"
+keywords = [
+    "jax",
+    "pallas",
+    "tpu",
+    "kernel",
+    "auto-tuning",
+    "autotune",
+    "benchmarking",
+    "performance",
+    "gpu",
+    "machine-learning",
+]
 dependencies = [
     "jax>=0.4.30",
     "jaxlib>=0.4.30",
@@ -22,13 +38,25 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
 ]
-readme = "README.md"
+
+[project.urls]
+Homepage = "https://github.com/nklinh91/pallas-forge"
+Repository = "https://github.com/nklinh91/pallas-forge"
+Documentation = "https://github.com/nklinh91/pallas-forge#readme"
+Issues = "https://github.com/nklinh91/pallas-forge/issues"
+Changelog = "https://github.com/nklinh91/pallas-forge/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
@@ -45,6 +73,10 @@ profile = [
 tpu = [
     "jax[tpu]>=0.4.30",
 ]
+build = [
+    "build>=1.0",
+    "twine>=5.0",
+]
 all = [
     "pallas-forge[dev,viz,profile]",
 ]
@@ -52,6 +84,9 @@ all = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["pallas_forge*"]
+
+[tool.setuptools.package-data]
+pallas_forge = ["py.typed"]
 
 [tool.ruff]
 line-length = 100

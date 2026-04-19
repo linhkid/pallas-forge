@@ -18,7 +18,20 @@ A lightweight auto-tuning framework for [Pallas](https://jax.readthedocs.io/en/l
 
 ## Installation
 
+### From PyPI (once published)
+
 ```bash
+pip install pallas-forge          # CPU interpret mode
+pip install "pallas-forge[viz]"   # with matplotlib/seaborn for heatmaps
+pip install "pallas-forge[tpu]"   # on a Linux TPU VM
+```
+
+### From source
+
+```bash
+git clone https://github.com/nklinh91/pallas-forge
+cd pallas-forge
+
 # Basic install (CPU testing via interpret mode)
 pip install -e .
 
@@ -202,6 +215,12 @@ you can run them on a free TPU runtime.
 | v4 | 275 | 1200 | 32 |
 | v5e | 197 | 819 | 32 |
 | v5p | 459 | 2765 | 95 |
+
+## Contributing & releases
+
+- **Contributing**: open an issue or PR. Tests (`pytest tests/`) must pass on CPU.
+- **Publishing**: see [`PUBLISHING.md`](PUBLISHING.md) for the PyPI release workflow (automated via GitHub Actions + Trusted Publishing).
+- **Changelog**: see [`CHANGELOG.md`](CHANGELOG.md).
 
 ## License
 

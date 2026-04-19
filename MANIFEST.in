@@ -1,0 +1,14 @@
+include README.md
+include LICENSE
+include CHANGELOG.md
+include pyproject.toml
+include pallas_forge/py.typed
+recursive-include pallas_forge *.py
+recursive-exclude tests *
+recursive-exclude benchmarks *
+recursive-exclude notebooks *
+recursive-exclude blog *
+recursive-exclude .github *
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude .DS_Store
