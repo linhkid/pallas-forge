@@ -11,7 +11,6 @@ from functools import lru_cache
 from typing import Any, Sequence
 
 import jax
-import jax.numpy as jnp
 from jax.experimental import pallas as pl
 
 

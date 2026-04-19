@@ -19,7 +19,7 @@ import jax.numpy as jnp
 from jax.experimental import pallas as pl
 
 from pallas_forge._compat import pallas_call_compat
-from pallas_forge.kernels._utils import ceildiv, pad_to_multiple, unpad
+from pallas_forge.kernels._utils import pad_to_multiple, unpad
 
 
 def _swiglu_kernel(
