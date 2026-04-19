@@ -9,7 +9,7 @@ A lightweight auto-tuning framework for [Pallas](https://jax.readthedocs.io/en/l
   &nbsp;
   <img src="images/roofline.png" alt="Roofline chart — pallas-forge reference kernels" width="520">
 </p>
-<p align="center"><em>Left: same matmul, different block sizes → 4× latency swing. Right: three reference kernels on the v5e roofline.</em></p>
+<p align="center"><em>Top: same matmul, different block sizes → 4× latency swing. Bottom: three reference kernels on the v5e roofline.</em></p>
 
 ## Features
 
