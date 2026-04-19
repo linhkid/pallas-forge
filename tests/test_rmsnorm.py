@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import pytest
-
 import jax
 import jax.numpy as jnp
+import pytest
 
 from pallas_forge.kernels.rmsnorm import fused_rmsnorm_residual, rmsnorm_reference
 

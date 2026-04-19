@@ -41,6 +41,7 @@ class TestBenchmarkResult:
 class TestBenchmarkRunner:
     def test_basic_timing(self):
         """Runner should produce valid timing results with a trivial kernel."""
+
         def kernel(x, *, multiplier=2):
             return x * multiplier
 
@@ -57,7 +58,6 @@ class TestBenchmarkRunner:
 
     def test_run_all_sorted(self):
         """Results should be sorted by median time (fastest first)."""
-        call_count = {"slow": 0, "fast": 0}
 
         def kernel(x, *, delay_iters=1):
             for _ in range(delay_iters):
@@ -79,6 +79,7 @@ class TestBenchmarkRunner:
 
     def test_flops_computation(self):
         """TFLOPS should be computed when flops_fn is provided."""
+
         def kernel(x):
             return x * 2
 
@@ -95,6 +96,7 @@ class TestBenchmarkRunner:
 
     def test_bandwidth_computation(self):
         """Bandwidth should be computed when bytes_fn is provided."""
+
         def kernel(x):
             return x + 1
 

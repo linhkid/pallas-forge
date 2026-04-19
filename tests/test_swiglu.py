@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 import jax
 import jax.numpy as jnp
 

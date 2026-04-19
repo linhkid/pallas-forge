@@ -1,0 +1,29 @@
+# pre-commit hooks: https://pre-commit.com
+#
+# One-time setup:
+#   pip install pre-commit
+#   pre-commit install
+#
+# Run against all files manually:
+#   pre-commit run --all-files
+
+repos:
+  # Ruff — lint + auto-format. Must match the version in pyproject.toml dev extras.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix]   # auto-fix unused imports, simple issues
+      - id: ruff-format
+
+  # Basic hygiene — standard set from the pre-commit maintainers.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml              # validates workflow YAML, configs
+      - id: check-toml              # validates pyproject.toml
+      - id: check-merge-conflict    # blocks commits with unresolved conflicts
+      - id: check-added-large-files # prevents accidental >500KB commits
+        args: [--maxkb=500]

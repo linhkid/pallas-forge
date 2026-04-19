@@ -12,7 +12,6 @@ import jax.numpy as jnp
 from pallas_forge.kernels.matmul import tiled_matmul
 from pallas_forge.tune import TuneConfig, tune
 
-
 # Problem size
 M, K, N = 2048, 2048, 2048
 DTYPE = jnp.bfloat16
@@ -62,11 +61,13 @@ def xla_baseline():
 
 
 def main():
-    config = TuneConfig.from_dict({
-        "block_m": [64, 128, 256],
-        "block_k": [64, 128, 256],
-        "block_n": [64, 128, 256],
-    })
+    config = TuneConfig.from_dict(
+        {
+            "block_m": [64, 128, 256],
+            "block_k": [64, 128, 256],
+            "block_n": [64, 128, 256],
+        }
+    )
 
     # Add constraint: block sizes must be at least 64
     config.add_constraint(lambda p: all(v >= 64 for v in p.values()))
@@ -88,18 +89,30 @@ def main():
     report.to_json("results/matmul_results.json")
 
     # Generate heatmaps
-    report.heatmap("block_m", "block_n", metric="median_ms",
-                   title=f"MatMul Latency (ms) — {M}x{K}x{N}",
-                   save_path="results/matmul_heatmap_time.png")
-    report.heatmap("block_m", "block_k", metric="median_ms",
-                   title=f"MatMul Latency by block_m vs block_k",
-                   save_path="results/matmul_heatmap_mk.png")
+    report.heatmap(
+        "block_m",
+        "block_n",
+        metric="median_ms",
+        title=f"MatMul Latency (ms) — {M}x{K}x{N}",
+        save_path="results/matmul_heatmap_time.png",
+    )
+    report.heatmap(
+        "block_m",
+        "block_k",
+        metric="median_ms",
+        title="MatMul Latency by block_m vs block_k",
+        save_path="results/matmul_heatmap_mk.png",
+    )
 
     if report.results and report.results[0].tflops is not None:
-        report.heatmap("block_m", "block_n", metric="tflops",
-                       title=f"MatMul Throughput (TFLOPS)",
-                       save_path="results/matmul_heatmap_tflops.png",
-                       cmap="YlGn")
+        report.heatmap(
+            "block_m",
+            "block_n",
+            metric="tflops",
+            title="MatMul Throughput (TFLOPS)",
+            save_path="results/matmul_heatmap_tflops.png",
+            cmap="YlGn",
+        )
 
     # XLA baseline comparison
     xla_result = xla_baseline()
@@ -110,7 +123,7 @@ def main():
         print(f"Pallas: {best.median_ms:.3f} ms, XLA: {xla_result.median_ms:.3f} ms")
         print(f"Speedup vs XLA: {speedup:.2f}x")
 
-    print(f"\nResults saved to results/")
+    print("\nResults saved to results/")
 
 
 if __name__ == "__main__":

@@ -23,11 +23,11 @@ from pallas_forge._compat import pallas_call_compat
 
 
 def _rmsnorm_residual_kernel(
-    x_ref,          # [1, dim]
-    residual_ref,   # [1, dim]
-    weight_ref,     # [dim]
-    out_ref,        # [1, dim]
-    new_res_ref,    # [1, dim]
+    x_ref,  # [1, dim]
+    residual_ref,  # [1, dim]
+    weight_ref,  # [dim]
+    out_ref,  # [1, dim]
+    new_res_ref,  # [1, dim]
     *,
     eps: float,
 ):
@@ -107,7 +107,7 @@ def fused_rmsnorm_residual(
         in_specs=[
             pl.BlockSpec((1, dim), lambda i: (i, 0)),  # x: one row
             pl.BlockSpec((1, dim), lambda i: (i, 0)),  # residual: one row
-            pl.BlockSpec((dim,), lambda i: (0,)),       # weight: always full
+            pl.BlockSpec((dim,), lambda i: (0,)),  # weight: always full
         ],
         out_specs=[
             pl.BlockSpec((1, dim), lambda i: (i, 0)),  # out: one row

@@ -15,19 +15,35 @@ def _make_results():
     return [
         BenchmarkResult(
             config={"block_m": 64, "block_n": 64},
-            median_ms=2.0, mean_ms=2.1, std_ms=0.1, min_ms=1.9, max_ms=2.3,
+            median_ms=2.0,
+            mean_ms=2.1,
+            std_ms=0.1,
+            min_ms=1.9,
+            max_ms=2.3,
         ),
         BenchmarkResult(
             config={"block_m": 64, "block_n": 128},
-            median_ms=1.5, mean_ms=1.6, std_ms=0.1, min_ms=1.4, max_ms=1.8,
+            median_ms=1.5,
+            mean_ms=1.6,
+            std_ms=0.1,
+            min_ms=1.4,
+            max_ms=1.8,
         ),
         BenchmarkResult(
             config={"block_m": 128, "block_n": 64},
-            median_ms=3.0, mean_ms=3.1, std_ms=0.2, min_ms=2.8, max_ms=3.4,
+            median_ms=3.0,
+            mean_ms=3.1,
+            std_ms=0.2,
+            min_ms=2.8,
+            max_ms=3.4,
         ),
         BenchmarkResult(
             config={"block_m": 128, "block_n": 128},
-            median_ms=1.0, mean_ms=1.1, std_ms=0.05, min_ms=0.95, max_ms=1.2,
+            median_ms=1.0,
+            mean_ms=1.1,
+            std_ms=0.05,
+            min_ms=0.95,
+            max_ms=1.2,
         ),
     ]
 
@@ -80,6 +96,7 @@ class TestTuneReport:
     def test_heatmap_creates_figure(self):
         """Heatmap should return a matplotlib Figure."""
         import matplotlib
+
         matplotlib.use("Agg")  # Non-interactive backend for testing
 
         report = TuneReport(_make_results(), param_names=["block_m", "block_n"])
@@ -89,6 +106,7 @@ class TestTuneReport:
     def test_heatmap_save(self):
         """Heatmap should save to file."""
         import matplotlib
+
         matplotlib.use("Agg")
 
         report = TuneReport(_make_results(), param_names=["block_m", "block_n"])
@@ -100,10 +118,12 @@ class TestTuneReport:
     def test_heatmap_invalid_param(self):
         """Invalid parameter name should raise ValueError."""
         import matplotlib
+
         matplotlib.use("Agg")
 
         report = TuneReport(_make_results(), param_names=["block_m", "block_n"])
         import pytest
+
         with pytest.raises(ValueError, match="Parameters must be"):
             report.heatmap("nonexistent", "block_n")
 

@@ -23,10 +23,10 @@ from pallas_forge.kernels._utils import pad_to_multiple, unpad
 
 
 def _swiglu_kernel(
-    x_ref,       # [block_m, dim]
+    x_ref,  # [block_m, dim]
     w_gate_ref,  # [dim, block_n]
-    w_up_ref,    # [dim, block_n]
-    out_ref,     # [block_m, block_n]
+    w_up_ref,  # [dim, block_n]
+    out_ref,  # [block_m, block_n]
     *,
     use_gelu: bool,
 ):
@@ -175,8 +175,12 @@ def fused_geglu(
     dim = x.shape[-1]
     x_2d = x.reshape(-1, dim)
     result = _fused_glu(
-        x_2d, w_gate, w_up,
-        block_m=block_m, block_n=block_n,
-        use_gelu=True, num_stages=num_stages,
+        x_2d,
+        w_gate,
+        w_up,
+        block_m=block_m,
+        block_n=block_n,
+        use_gelu=True,
+        num_stages=num_stages,
     )
     return result.reshape(*original_batch_shape, -1)

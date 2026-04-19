@@ -12,7 +12,6 @@ import jax.numpy as jnp
 from pallas_forge.kernels.rmsnorm import fused_rmsnorm_residual
 from pallas_forge.tune import TuneConfig, tune
 
-
 # Problem size
 BATCH, SEQ_LEN, DIM = 4, 2048, 4096
 DTYPE = jnp.bfloat16
@@ -64,9 +63,11 @@ def xla_baseline():
 
 
 def main():
-    config = TuneConfig.from_dict({
-        "block_size": [DIM],  # For RMSNorm, typically process full hidden dim
-    })
+    config = TuneConfig.from_dict(
+        {
+            "block_size": [DIM],  # For RMSNorm, typically process full hidden dim
+        }
+    )
 
     print(f"Shape: [{BATCH}, {SEQ_LEN}, {DIM}], dtype={DTYPE}")
 

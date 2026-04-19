@@ -63,13 +63,17 @@ def roofline_chart(
         mem_bound_oi,
         0.1,
         np.minimum(peak_flops / 1e9, mem_bound_oi * peak_bw / 1e9),
-        alpha=0.1, color="blue", label="Memory-bound region",
+        alpha=0.1,
+        color="blue",
+        label="Memory-bound region",
     )
     ax.fill_between(
         comp_bound_oi,
         0.1,
         np.full_like(comp_bound_oi, peak_flops / 1e9),
-        alpha=0.1, color="red", label="Compute-bound region",
+        alpha=0.1,
+        color="red",
+        label="Compute-bound region",
     )
 
     # Plot ridge point
@@ -79,7 +83,8 @@ def roofline_chart(
         xy=(ridge_point, peak_flops / 1e9),
         xytext=(ridge_point * 2, peak_flops / 1e9 * 0.5),
         arrowprops=dict(arrowstyle="->", color="gray"),
-        fontsize=9, color="gray",
+        fontsize=9,
+        color="gray",
     )
 
     # Plot kernel data points

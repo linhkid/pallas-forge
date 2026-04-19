@@ -219,6 +219,8 @@ you can run them on a free TPU runtime.
 ## Contributing & releases
 
 - **Contributing**: open an issue or PR. Tests (`pytest tests/`) must pass on CPU.
+- **Pre-commit hooks**: after `pip install -e ".[dev]"`, run `pre-commit install` once.
+  Ruff and basic hygiene checks will then run on every commit, so you won't push lint-failing code.
 - **Publishing**: see [`PUBLISHING.md`](PUBLISHING.md) for the PyPI release workflow (automated via GitHub Actions + Trusted Publishing).
 - **Changelog**: see [`CHANGELOG.md`](CHANGELOG.md).
 

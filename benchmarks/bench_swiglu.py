@@ -12,7 +12,6 @@ import jax.numpy as jnp
 from pallas_forge.kernels.swiglu import fused_swiglu
 from pallas_forge.tune import TuneConfig, tune
 
-
 # Problem size (typical LLaMA-style FFN dimensions)
 BATCH_SEQ = 2048  # batch * seq_len
 DIM = 4096
@@ -70,10 +69,12 @@ def xla_baseline():
 
 
 def main():
-    config = TuneConfig.from_dict({
-        "block_m": [64, 128, 256],
-        "block_n": [128, 256, 512],
-    })
+    config = TuneConfig.from_dict(
+        {
+            "block_m": [64, 128, 256],
+            "block_n": [128, 256, 512],
+        }
+    )
 
     print(f"Shape: [{BATCH_SEQ}, {DIM}] x [{DIM}, {FFN_DIM}], dtype={DTYPE}")
 
@@ -89,9 +90,13 @@ def main():
     report.to_csv("results/swiglu_results.csv")
     report.to_json("results/swiglu_results.json")
 
-    report.heatmap("block_m", "block_n", metric="median_ms",
-                   title=f"SwiGLU Latency (ms) — {BATCH_SEQ}x{DIM}x{FFN_DIM}",
-                   save_path="results/swiglu_heatmap_time.png")
+    report.heatmap(
+        "block_m",
+        "block_n",
+        metric="median_ms",
+        title=f"SwiGLU Latency (ms) — {BATCH_SEQ}x{DIM}x{FFN_DIM}",
+        save_path="results/swiglu_heatmap_time.png",
+    )
 
     xla_result = xla_baseline()
     best = report.best(1)[0]

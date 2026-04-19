@@ -37,13 +37,15 @@ class BenchmarkResult:
     def to_dict(self) -> dict[str, Any]:
         """Convert to a flat dictionary for JSON/CSV export."""
         d = {f"config_{k}": v for k, v in self.config.items()}
-        d.update({
-            "median_ms": self.median_ms,
-            "mean_ms": self.mean_ms,
-            "std_ms": self.std_ms,
-            "min_ms": self.min_ms,
-            "max_ms": self.max_ms,
-        })
+        d.update(
+            {
+                "median_ms": self.median_ms,
+                "mean_ms": self.mean_ms,
+                "std_ms": self.std_ms,
+                "min_ms": self.min_ms,
+                "max_ms": self.max_ms,
+            }
+        )
         if self.tflops is not None:
             d["tflops"] = self.tflops
         if self.bandwidth_gb_s is not None:

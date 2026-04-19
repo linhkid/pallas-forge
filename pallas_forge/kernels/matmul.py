@@ -37,12 +37,8 @@ def _matmul_kernel(
     acc = jnp.zeros(o_ref.shape, dtype=jnp.float32)
 
     def body(k, acc):
-        x_tile = jax.lax.dynamic_slice(
-            x_ref[...], (0, k * block_k), (x_ref.shape[0], block_k)
-        )
-        w_tile = jax.lax.dynamic_slice(
-            w_ref[...], (k * block_k, 0), (block_k, w_ref.shape[1])
-        )
+        x_tile = jax.lax.dynamic_slice(x_ref[...], (0, k * block_k), (x_ref.shape[0], block_k))
+        w_tile = jax.lax.dynamic_slice(w_ref[...], (k * block_k, 0), (block_k, w_ref.shape[1]))
         acc = acc + jnp.dot(x_tile, w_tile, preferred_element_type=jnp.float32)
         return acc
 

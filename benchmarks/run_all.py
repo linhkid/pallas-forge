@@ -6,7 +6,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 BENCHMARKS = [
     "bench_matmul.py",
     "bench_rmsnorm.py",

@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import pytest
-
 import jax
 import jax.numpy as jnp
+import pytest
 
 from pallas_forge.kernels.matmul import tiled_matmul
 
@@ -94,8 +93,9 @@ class TestTiledMatmul:
 
         for bm, bk, bn in [(64, 64, 64), (128, 128, 128), (256, 128, 64)]:
             result = tiled_matmul(x, w, block_m=bm, block_k=bk, block_n=bn)
-            assert jnp.allclose(result, expected, atol=1e-4, rtol=1e-4), \
-                f"Failed for block_m={bm}, block_k={bk}, block_n={bn}"
+            assert jnp.allclose(
+                result, expected, atol=1e-4, rtol=1e-4
+            ), f"Failed for block_m={bm}, block_k={bk}, block_n={bn}"
 
     def test_invalid_inputs(self):
         """Invalid inputs should raise ValueError."""
