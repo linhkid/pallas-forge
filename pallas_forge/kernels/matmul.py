@@ -19,6 +19,8 @@ utilization but increase VMEM pressure.
 
 from __future__ import annotations
 
+import functools
+
 import jax
 import jax.numpy as jnp
 from jax.experimental import pallas as pl
@@ -46,6 +48,7 @@ def _matmul_kernel(x_ref, w_ref, o_ref):
     o_ref[...] += jnp.dot(x_ref[...], w_ref[...], preferred_element_type=jnp.float32)
 
 
+@functools.partial(jax.jit, static_argnames=("block_m", "block_k", "block_n", "num_stages"))
 def tiled_matmul(
     x: jax.Array,
     w: jax.Array,
@@ -59,6 +62,11 @@ def tiled_matmul(
 
     Computes x @ w with configurable tile sizes. Handles non-aligned dimensions
     by padding inputs up to block-aligned sizes and slicing the result.
+
+    The function is `@jax.jit`-wrapped so that each unique (block_m, block_k,
+    block_n, num_stages) combination is traced + lowered exactly once.
+    Subsequent calls with the same block sizes on the same-shaped inputs hit
+    the cache and avoid Python/Pallas overhead.
 
     Args:
         x: Left matrix, shape [M, K].

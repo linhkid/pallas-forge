@@ -12,7 +12,7 @@ The fusion saves two full HBM round-trips for the gate and up intermediate resul
 
 from __future__ import annotations
 
-from functools import partial
+import functools
 
 import jax
 import jax.numpy as jnp
@@ -102,7 +102,7 @@ def _fused_glu(
     grid_m = M_pad // block_m
     grid_n = N_pad // block_n
 
-    kernel = partial(_swiglu_kernel, use_gelu=use_gelu)
+    kernel = functools.partial(_swiglu_kernel, use_gelu=use_gelu)
 
     result = pallas_call_compat(
         kernel,
@@ -120,6 +120,7 @@ def _fused_glu(
     return unpad(result, (orig_M, orig_N))
 
 
+@functools.partial(jax.jit, static_argnames=("block_m", "block_n", "num_stages"))
 def fused_swiglu(
     x: jax.Array,
     w_gate: jax.Array,
@@ -129,18 +130,21 @@ def fused_swiglu(
     block_n: int = 128,
     num_stages: int = 2,
 ) -> jax.Array:
-    """Fused SwiGLU activation: silu(x @ w_gate) * (x @ w_up).
+    """Fused SwiGLU activation: ``silu(x @ w_gate) * (x @ w_up)``.
+
+    ``@jax.jit``-wrapped: traces + lowers once per (block_m, block_n, num_stages,
+    input-shape) combination; subsequent calls hit JAX's cache.
 
     Args:
-        x: Input tensor, shape [..., dim]. Batch dims are flattened internally.
-        w_gate: Gate weight, shape [dim, ffn_dim].
-        w_up: Up projection weight, shape [dim, ffn_dim].
-        block_m: Tile size for token dimension.
-        block_n: Tile size for output dimension.
+        x: Input tensor, shape ``[..., dim]``. Batch dims are flattened internally.
+        w_gate: Gate weight, shape ``[dim, ffn_dim]``.
+        w_up: Up projection weight, shape ``[dim, ffn_dim]``.
+        block_m: Tile size for token dimension (multiple of 8).
+        block_n: Tile size for output dimension (multiple of 128 on TPU).
         num_stages: DMA pipeline stages.
 
     Returns:
-        Output tensor, shape [..., ffn_dim].
+        Output tensor, shape ``[..., ffn_dim]``.
     """
     original_batch_shape = x.shape[:-1]
     dim = x.shape[-1]
@@ -149,6 +153,7 @@ def fused_swiglu(
     return result.reshape(*original_batch_shape, -1)
 
 
+@functools.partial(jax.jit, static_argnames=("block_m", "block_n", "num_stages"))
 def fused_geglu(
     x: jax.Array,
     w_gate: jax.Array,
@@ -158,18 +163,20 @@ def fused_geglu(
     block_n: int = 128,
     num_stages: int = 2,
 ) -> jax.Array:
-    """Fused GeGLU activation: gelu(x @ w_gate) * (x @ w_up).
+    """Fused GeGLU activation: ``gelu(x @ w_gate) * (x @ w_up)``.
+
+    ``@jax.jit``-wrapped: see ``fused_swiglu`` for caching semantics.
 
     Args:
-        x: Input tensor, shape [..., dim]. Batch dims are flattened internally.
-        w_gate: Gate weight, shape [dim, ffn_dim].
-        w_up: Up projection weight, shape [dim, ffn_dim].
-        block_m: Tile size for token dimension.
-        block_n: Tile size for output dimension.
+        x: Input tensor, shape ``[..., dim]``. Batch dims are flattened internally.
+        w_gate: Gate weight, shape ``[dim, ffn_dim]``.
+        w_up: Up projection weight, shape ``[dim, ffn_dim]``.
+        block_m: Tile size for token dimension (multiple of 8).
+        block_n: Tile size for output dimension (multiple of 128 on TPU).
         num_stages: DMA pipeline stages.
 
     Returns:
-        Output tensor, shape [..., ffn_dim].
+        Output tensor, shape ``[..., ffn_dim]``.
     """
     original_batch_shape = x.shape[:-1]
     dim = x.shape[-1]

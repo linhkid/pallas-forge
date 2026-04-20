@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] — 2026-04-20
+
+Second TPU-validated release. 0.1.1 shipped a matmul kernel that ran on TPU
+but hit two latent issues when integrated end-to-end: the RMSNorm kernel
+failed the same sublane rule we'd fixed for matmul, and every kernel call
+paid ~40 ms of Python/lowering overhead because the outer wrappers weren't
+JIT-compiled. 0.1.2 fixes both.
+
+### Fixed
+- **`@jax.jit` on every kernel wrapper.** `tiled_matmul`, `fused_swiglu`,
+  `fused_geglu`, and `fused_rmsnorm_residual` are now all decorated with
+  `@jax.jit` (static args: block sizes + eps as appropriate). First call with
+  a given config/shape combination traces and lowers once; subsequent calls
+  hit JAX's cache. On TPU v5e this drops per-call latency from ~40 ms of
+  Python overhead to the actual kernel time (single-digit ms for typical
+  sizes). Benchmark results in 0.1.1 were dominated by this overhead.
+- **RMSNorm now runs on real TPU.** The kernel used `BlockSpec((1, dim), ...)`
+  which violates the TPU sublane alignment rule (second-to-last block dim
+  must be divisible by 8). Rewrote to process 8 tokens per kernel instance
+  (`BlockSpec((8, dim), ...)`) with the wrapper padding the token axis up to
+  a multiple of 8 and slicing back.
+- **`TuneReport.to_csv` handles heterogeneous rows.** When results have
+  different config keys (after mutation, or concatenated from multiple
+  `tune()` runs), the writer now takes the union of fieldnames across rows
+  instead of raising `ValueError: dict contains fields not in fieldnames`.
+
+### Changed
+- Notebook block-size choices bumped so every documented config satisfies
+  the TPU 128-lane rule.
+- Notebooks pinned to `@v0.1.2` in the Colab install cell.
+- Blog Part 3 rewritten with real TPU v5e measurements — the honest finding
+  is that custom Pallas kernels beat XLA where *fusion* matters
+  (RMSNorm+residual: 3.78× faster than the unfused XLA equivalent), and lose
+  where XLA already has a hand-tuned kernel (matmul, SwiGLU). That nuance
+  is the interesting story.
+- README speedup caption switched from "synthetic illustrative numbers" to
+  the measured v5e values.
+
+### Known issues
+- `dim < 128` only works in CPU interpret mode; on TPU the last-block-dim
+  rule will reject it. Tests use `dim = 64` which passes on CPU but not on
+  TPU. A future release will add dim-padding inside the RMSNorm wrapper.
+
 ## [0.1.1] — 2026-04-20
 
 First TPU-hardware-validated release. 0.1.0 passed all CPU interpret-mode tests
@@ -82,6 +125,7 @@ Initial release.
 - Three benchmark scripts (`bench_matmul.py`, `bench_rmsnorm.py`, `bench_swiglu.py`) with XLA baseline comparison
 - Three-part blog series in `blog/`
 
-[Unreleased]: https://github.com/nklinh91/pallas-forge/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/nklinh91/pallas-forge/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/nklinh91/pallas-forge/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/nklinh91/pallas-forge/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/nklinh91/pallas-forge/releases/tag/v0.1.0

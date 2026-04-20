@@ -56,11 +56,23 @@ class TuneReport:
             json.dump(data, f, indent=2)
 
     def to_csv(self, path: str | Path) -> None:
-        """Export results to CSV."""
+        """Export results to CSV.
+
+        Fieldnames are built from the union of keys across all rows, preserving
+        first-seen order. This means heterogeneous configs (e.g. after a
+        mid-analysis mutation, or concatenated results from multiple tune()
+        runs) export cleanly instead of raising a ValueError.
+        """
         if not self.results:
             return
         rows = [r.to_dict() for r in self.results]
-        fieldnames = list(rows[0].keys())
+        fieldnames: list[str] = []
+        seen: set[str] = set()
+        for row in rows:
+            for k in row.keys():
+                if k not in seen:
+                    seen.add(k)
+                    fieldnames.append(k)
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w", newline="") as f:
