@@ -9,7 +9,7 @@ A lightweight auto-tuning framework for [Pallas](https://jax.readthedocs.io/en/l
   &nbsp;
   <img src="images/roofline.png" alt="Roofline chart — pallas-forge reference kernels" width="520">
 </p>
-<p align="center"><em>Placeholder figures generated from a synthetic cost model — run <a href="notebooks/05_reproduce_figures.ipynb"><code>notebooks/05_reproduce_figures.ipynb</code></a> on a Colab TPU to regenerate with real hardware data.</em></p>
+<p align="center"><em>Measured on TPU v5e via Colab. Reproduce with <a href="notebooks/05_reproduce_figures.ipynb"><code>notebooks/05_reproduce_figures.ipynb</code></a>.</em></p>
 
 ## Features
 
@@ -151,10 +151,20 @@ report = tune(
 ### Speedup vs XLA baseline
 
 <p align="center">
-  <img src="images/speedup_vs_xla.png" alt="Pallas-forge vs XLA baseline" width="820">
+  <img src="images/speedup_vs_xla.png" alt="Pallas-forge vs XLA baseline (measured on TPU v5e)" width="820">
 </p>
 
-*Synthetic illustrative numbers. Run [`notebooks/05_reproduce_figures.ipynb`](notebooks/05_reproduce_figures.ipynb) on a Colab TPU for real measurements, or `python benchmarks/run_all.py` on a TPU VM.*
+**Measured on TPU v5e (via Colab).** The honest finding:
+
+- **Fused RMSNorm + Residual wins big: 3.78×** — the fusion eliminates an HBM
+  round-trip on an intermediate that XLA can't easily avoid.
+- **SwiGLU and Tiled MatMul lose to XLA** (0.65× and 0.12×) — XLA's
+  hand-tuned kernels for standard matmul / activation patterns are hard to
+  beat with a teaching-quality implementation. That's a useful finding, not
+  a failure: the blog series unpacks *why*.
+
+Reproduce with [`notebooks/05_reproduce_figures.ipynb`](notebooks/05_reproduce_figures.ipynb)
+on a Colab TPU runtime (takes ~5-10 minutes).
 
 ## Project Structure
 
