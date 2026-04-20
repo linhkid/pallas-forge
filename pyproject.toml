@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pallas-forge"
-version = "0.1.0"
+version = "0.1.1"
 description = "Lightweight auto-tuning framework for Pallas kernels on Google TPU"
 authors = [
     {name = "Nguyen Khanh Linh", email = "nklinh91@gmail.com"},

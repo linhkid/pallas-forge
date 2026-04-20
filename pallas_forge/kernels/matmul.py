@@ -3,13 +3,21 @@
 Implements blocked matrix multiplication with configurable block sizes,
 demonstrating BlockSpec, grid, Ref types, and the 8x128 alignment constraint.
 
-The block sizes (block_m, block_k, block_n) are the primary tuning knobs.
-Larger blocks improve MXU utilization but increase VMEM pressure.
+Uses the canonical Pallas TPU matmul pattern:
+    - 3D grid (grid_m, grid_n, k_tiles) — K axis is iterated by the grid
+    - Accumulator lives in o_ref across K iterations (Mosaic keeps it in VMEM)
+    - pl.when(program_id(2) == 0) zeros the accumulator on the first K tile
+
+TPU block-size constraints (enforced by the Pallas TPU lowering):
+    - block_k must be divisible by 128 (last dim of x tile)
+    - block_n must be divisible by 128 (last dim of w tile + output tile)
+    - block_m must be divisible by 8
+
+The block sizes are the primary tuning knobs. Larger blocks improve MXU
+utilization but increase VMEM pressure.
 """
 
 from __future__ import annotations
-
-from functools import partial
 
 import jax
 import jax.numpy as jnp
@@ -19,31 +27,23 @@ from pallas_forge._compat import pallas_call_compat
 from pallas_forge.kernels._utils import pad_to_multiple, unpad
 
 
-def _matmul_kernel(
-    x_ref,  # [block_m, K]
-    w_ref,  # [K, block_n]
-    o_ref,  # [block_m, block_n]
-    *,
-    block_k: int,
-):
-    """Core Pallas kernel for tiled matrix multiplication.
+def _matmul_kernel(x_ref, w_ref, o_ref):
+    """Pallas kernel for one (i, j, k) cell of the 3D matmul grid.
 
-    Each kernel instance computes one (block_m x block_n) output tile.
-    It iterates over K in chunks of block_k, accumulating in float32.
+    - On k=0, zeros the accumulator in o_ref.
+    - Adds this K-slab's contribution to the accumulator.
+
+    o_ref is always fp32 so the K-axis accumulation stays in fp32 across
+    iterations — casting to the target output dtype happens once at the
+    wrapper level, not per K tile. This matters for bf16 inputs where
+    per-tile casts would accumulate rounding error.
     """
-    K = x_ref.shape[1]
-    k_tiles = K // block_k
 
-    acc = jnp.zeros(o_ref.shape, dtype=jnp.float32)
+    @pl.when(pl.program_id(2) == 0)
+    def _reset():
+        o_ref[...] = jnp.zeros_like(o_ref)
 
-    def body(k, acc):
-        x_tile = jax.lax.dynamic_slice(x_ref[...], (0, k * block_k), (x_ref.shape[0], block_k))
-        w_tile = jax.lax.dynamic_slice(w_ref[...], (k * block_k, 0), (block_k, w_ref.shape[1]))
-        acc = acc + jnp.dot(x_tile, w_tile, preferred_element_type=jnp.float32)
-        return acc
-
-    acc = jax.lax.fori_loop(0, k_tiles, body, acc)
-    o_ref[...] = acc.astype(o_ref.dtype)
+    o_ref[...] += jnp.dot(x_ref[...], w_ref[...], preferred_element_type=jnp.float32)
 
 
 def tiled_matmul(
@@ -58,15 +58,16 @@ def tiled_matmul(
     """Tiled matrix multiplication using Pallas.
 
     Computes x @ w with configurable tile sizes. Handles non-aligned dimensions
-    by padding and unpadding.
+    by padding inputs up to block-aligned sizes and slicing the result.
 
     Args:
         x: Left matrix, shape [M, K].
         w: Right matrix, shape [K, N].
-        block_m: Tile size for M dimension.
-        block_k: Tile size for K dimension (reduction loop).
-        block_n: Tile size for N dimension.
-        num_stages: DMA pipeline stages (>1 overlaps transfer with compute on TPU).
+        block_m: Tile size for M dimension. Must be a multiple of 8.
+        block_k: Tile size for K dimension (reduction). Must be a multiple of 128 on TPU.
+        block_n: Tile size for N dimension. Must be a multiple of 128 on TPU.
+        num_stages: DMA pipeline stages. Forwarded to compiler_params where supported;
+            silently dropped on JAX versions that don't expose the knob.
 
     Returns:
         Result matrix, shape [M, N].
@@ -81,7 +82,7 @@ def tiled_matmul(
     orig_M, orig_N = M, N
     out_dtype = x.dtype
 
-    # Pad to block-aligned dimensions
+    # Pad to block-aligned sizes so the 3D grid divides cleanly.
     x = pad_to_multiple(x, block_m, axis=0)
     x = pad_to_multiple(x, block_k, axis=1)
     w = pad_to_multiple(w, block_k, axis=0)
@@ -92,22 +93,24 @@ def tiled_matmul(
 
     grid_m = M_pad // block_m
     grid_n = N_pad // block_n
+    n_k_tiles = K_pad // block_k
 
-    kernel = partial(_matmul_kernel, block_k=block_k)
-
-    # 2D grid: each (i, j) computes one output tile, iterating over K internally
-    result = pallas_call_compat(
-        kernel,
-        grid=(grid_m, grid_n),
+    # 3D grid: the K axis is iterated by the grid itself, not via dynamic_slice
+    # inside the kernel body. This is the canonical Pallas TPU matmul pattern
+    # (dynamic_slice is not supported by the TPU tensor-core lowering).
+    #
+    # Output of the Pallas kernel is always fp32 for numerical stability across
+    # K-axis accumulation. We cast to the caller's dtype in a single post-pass.
+    result_f32 = pallas_call_compat(
+        _matmul_kernel,
+        grid=(grid_m, grid_n, n_k_tiles),
         in_specs=[
-            # Each grid cell (i, j) gets x[i*block_m:(i+1)*block_m, :] (full K row)
-            pl.BlockSpec((block_m, K_pad), lambda i, j: (i, 0)),
-            # Each grid cell (i, j) gets w[:, j*block_n:(j+1)*block_n] (full K col)
-            pl.BlockSpec((K_pad, block_n), lambda i, j: (0, j)),
+            pl.BlockSpec((block_m, block_k), lambda i, j, k: (i, k)),
+            pl.BlockSpec((block_k, block_n), lambda i, j, k: (k, j)),
         ],
-        out_specs=pl.BlockSpec((block_m, block_n), lambda i, j: (i, j)),
-        out_shape=jax.ShapeDtypeStruct((M_pad, N_pad), out_dtype),
+        out_specs=pl.BlockSpec((block_m, block_n), lambda i, j, k: (i, j)),
+        out_shape=jax.ShapeDtypeStruct((M_pad, N_pad), jnp.float32),
         num_stages=num_stages,
     )(x, w)
 
-    return unpad(result, (orig_M, orig_N))
+    return unpad(result_f32, (orig_M, orig_N)).astype(out_dtype)
