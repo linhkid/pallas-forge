@@ -2,14 +2,26 @@
 
 A lightweight auto-tuning framework for [Pallas](https://jax.readthedocs.io/en/latest/pallas/index.html) kernels on Google TPU.
 
-**pallas-forge** helps you systematically discover *why* some kernel configurations outperform others by 3-5×, producing performance heatmaps, XProf profiler traces, and roofline charts.
+**pallas-forge** helps you systematically find the right block-size configuration for a Pallas kernel — and honestly answer the question *"is my custom kernel actually beating XLA?"* It ships three reference kernels, a kernel-agnostic auto-tuner with proper warmup + timing discipline, and performance heatmaps, roofline charts, and XProf trace capture as first-class outputs.
 
 <p align="center">
-  <img src="images/heatmap_matmul.png" alt="MatMul block-size heatmap on TPU v5e" width="520">
+  <img src="images/heatmap_matmul.png" alt="MatMul block-size heatmap on TPU v5e — 3.56× spread between best and worst config" width="520">
   &nbsp;
-  <img src="images/roofline.png" alt="Roofline chart — pallas-forge reference kernels" width="520">
+  <img src="images/roofline.png" alt="Roofline chart — pallas-forge reference kernels on TPU v5e" width="520">
 </p>
 <p align="center"><em>Measured on TPU v5e via Colab. Reproduce with <a href="notebooks/05_reproduce_figures.ipynb"><code>notebooks/05_reproduce_figures.ipynb</code></a>.</em></p>
+
+### What the measurements say
+
+Running the three reference kernels against unfused XLA baselines on a Colab TPU v5e (2048² bf16 matmul, 4×2048×4096 RMSNorm, LLaMA-sized SwiGLU):
+
+| Kernel | XLA (ms) | Pallas (ms) | Speedup |
+|---|---:|---:|---:|
+| **Fused RMSNorm + Residual** | 3.05 | 0.88 | **3.44×** ✅ |
+| Tiled MatMul | 0.25 | 0.32 | 0.77× |
+| Fused SwiGLU | 2.75 | 4.22 | 0.65× |
+
+The honest finding: **custom Pallas kernels earn their complexity in fusion opportunities** — eliminating HBM round-trips that XLA can't avoid (RMSNorm+residual wins by 3.44×). For standard matmul, our teaching-quality kernel lands within ~23% of XLA's decade-hand-tuned baseline, which is as much as you can reasonably hope for. The block-size sweep over matmul shows a **3.56× spread** from worst to best config (1.14 ms → 0.32 ms), which is the library's core use case: finding that best config systematically instead of by hand.
 
 ## Features
 
@@ -154,14 +166,15 @@ report = tune(
   <img src="images/speedup_vs_xla.png" alt="Pallas-forge vs XLA baseline (measured on TPU v5e)" width="820">
 </p>
 
-**Measured on TPU v5e (via Colab).** The honest finding:
+**Measured on TPU v5e (via Colab).** The three regimes:
 
-- **Fused RMSNorm + Residual wins big: 3.78×** — the fusion eliminates an HBM
+- **Fused RMSNorm + Residual wins big: 3.44×** — the fusion eliminates an HBM
   round-trip on an intermediate that XLA can't easily avoid.
-- **SwiGLU and Tiled MatMul lose to XLA** (0.65× and 0.12×) — XLA's
-  hand-tuned kernels for standard matmul / activation patterns are hard to
-  beat with a teaching-quality implementation. That's a useful finding, not
-  a failure: the blog series unpacks *why*.
+- **Tiled MatMul is nearly at parity (0.77×)** — XLA's matmul has had years of
+  hand-tuning; our teaching-quality kernel lands within ~23%, which is as close
+  as a from-scratch implementation reasonably gets.
+- **Fused SwiGLU loses (0.65×)** — XLA already fuses the gate+activation+multiply
+  pretty effectively; custom Pallas here isn't obviously worth the complexity.
 
 Reproduce with [`notebooks/05_reproduce_figures.ipynb`](notebooks/05_reproduce_figures.ipynb)
 on a Colab TPU runtime (takes ~5-10 minutes).
